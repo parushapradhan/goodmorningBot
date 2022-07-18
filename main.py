@@ -1,25 +1,32 @@
-import datetime
 import os
 import discord
+import asyncio
 from discord.ext import tasks,commands
+from datetime import datetime, timedelta
 
 bot = commands.Bot(intents=discord.Intents.default(), command_prefix='$')
 
-setTime = datetime.time(hour=5, minute=30)
 channel_id= ''
 
-@tasks.loop(time=setTime)
-async def goodMorning():
+def seconds_until_morning():
+    now = datetime.now()
+    target = (now + timedelta(days=1)).replace(hour=5, minute=30, second=0, microsecond=0)
+    diff = (target - now).total_seconds()
+    return diff
+  
+@tasks.loop(seconds = 1)
+async def good_morning():
+    await asyncio.sleep(seconds_until_morning())
     channel = bot.get_channel(channel_id)
     await channel.send("Good Morrrning")
-    
+  
 @bot.command()
 async def start(ctx):
-    global channel_id
-    channel_id = ctx.channel.id
-    if not goodMorning.is_running():
-        goodMorning.start()
-    await ctx.channel.send('Goodmorning messages at 5:30AM will now be sent in this channel')
+  global channel_id
+  channel_id = ctx.channel.id
+  await ctx.channel.send('Goodmorning messages will now be sent in this channel everyday at 5:30AM')
+  if not good_morning.is_running():
+    good_morning.start()
     
 
-bot.run(os.environ['TOKEN'])
+bot.run(os.environ['TOKEN'])  
